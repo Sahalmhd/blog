@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Filament\Resources\PostResource\Pages;
+namespace App\Filament\Author\Resources\PostResource\Pages;
 
-use App\Filament\Resources\PostResource;
+use App\Filament\Author\Resources\PostResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ManageRecords;
 
-class ListPosts extends ListRecords
+class ManagePosts extends ManageRecords
 {
     protected static string $resource = PostResource::class;
 

@@ -1,15 +1,14 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Author\Resources;
 
-use App\Filament\Resources\PostResource\Pages;
-use App\Filament\Resources\PostResource\RelationManagers;
-use App\Models\Author;
+use App\Filament\Author\Resources\PostResource\Pages;
+use App\Filament\Author\Resources\PostResource\RelationManagers;
 use App\Models\Post;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -20,6 +19,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class PostResource extends Resource
@@ -34,13 +34,10 @@ class PostResource extends Resource
             ->schema([
                 TextInput::make('title')
                     ->required()
+                    ->columnSpan(2)
                     ->maxLength(255),
-
-                Select::make('author')
-                    ->label('Author')
-                    ->options(Author::all()->pluck('name', 'name'))
-                    ->searchable(),
-
+                Hidden::make('author')
+                    ->default(fn() => Auth::guard('authors')->user()?->name),
                 Textarea::make('short_description')
                     ->required()
                     ->maxLength(255)
@@ -52,14 +49,13 @@ class PostResource extends Resource
                     ->image()
                     ->imageEditor()
                     ->columnSpan('full'),
-
-
                 RichEditor::make('description')
                     ->label('description')
                     ->columnSpan('full')
                     ->fileAttachmentsDisk('public')
                     ->fileAttachmentsDirectory('attachments')
                     ->fileAttachmentsVisibility('public'),
+
             ]);
     }
 
@@ -70,9 +66,9 @@ class PostResource extends Resource
                 TextColumn::make('title')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('author')
-                    ->searchable()
-                    ->sortable(),
+                // TextColumn::make('author')
+                //     ->searchable()
+                //     ->sortable(),
 
                 ImageColumn::make('thumbnail')
                     ->disk('public')
@@ -103,14 +99,6 @@ class PostResource extends Resource
                         if ($record->thumbnail && Storage::disk('public')->exists($record->thumbnail)) {
                             Storage::disk('public')->delete($record->thumbnail);
                         }
-
-                        // if ($record->gallery && is_array($record->gallery)) {
-                        //     foreach ($record->gallery as $photo) {
-                        //         if (Storage::disk('public')->exists($photo)) {
-                        //             Storage::disk('public')->delete($photo);
-                        //         }
-                        //     }
-                        // }
                     }),
             ])
             ->bulkActions([
@@ -125,5 +113,10 @@ class PostResource extends Resource
         return [
             'index' => Pages\ManagePosts::route('/'),
         ];
+    }
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('author', Auth::user()->name);
     }
 }
